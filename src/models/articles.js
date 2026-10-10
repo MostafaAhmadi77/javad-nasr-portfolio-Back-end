@@ -5,6 +5,10 @@ const schema = new mongoose.Schema({
         type: String,
         required: true
     },
+    summary:{
+        type:String,
+        required:true
+    },
     description: {
         type: String,
         required: true
@@ -12,7 +16,14 @@ const schema = new mongoose.Schema({
     picture: {
         type: String,
         required: false
+    },
+    status:{
+        type:String,
+        enum:["PUBLISHED","DRAFT"],
+        default:"DRAFT",
+        required:false
     }
+
 }, { timestamps: true })
 
 
