@@ -4,13 +4,12 @@ const { errorResponse, successResponse } = require("./../../utils/responses.js")
 
 exports.create = async (req, res, next) => {
     try {
-        const { title, description, picture, summary } = req.body
+        const { title, description, picture, summary, status, tags } = req.body
 
         await articlesValidationSchema.validate({
             title,
             description,
-            summary,
-            picture
+            summary
         }, { abortEarly: false })
 
         const isArticleExist = await articlesModel.findOne({ title })
@@ -18,7 +17,7 @@ exports.create = async (req, res, next) => {
             return errorResponse(res, 409, "Article already exists.")
         }
 
-        let article = new articlesModel({ title, description, picture, summary, picture: req.file.filename })
+        let article = new articlesModel({ title, description, picture, summary, status, tags, picture: req.file.filename })
         article = await article.save()
 
         return successResponse(res, 201, {

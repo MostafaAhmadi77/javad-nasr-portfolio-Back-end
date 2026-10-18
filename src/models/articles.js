@@ -5,9 +5,9 @@ const schema = new mongoose.Schema({
         type: String,
         required: true
     },
-    summary:{
-        type:String,
-        required:true
+    summary: {
+        type: String,
+        required: true
     },
     description: {
         type: String,
@@ -17,15 +17,21 @@ const schema = new mongoose.Schema({
         type: String,
         required: false
     },
-    status:{
-        type:String,
-        enum:["PUBLISHED","DRAFT"],
-        default:"DRAFT",
-        required:false
+    status: {
+        type: String,
+        enum: ["PUBLISHED", "DRAFT"],
+        default: "DRAFT",
+        required: false
+    },
+    tags: {
+        type: String,
+        enum: ["AI", "Human", "Assisted", "Verified", "Comprehensive"],
+        default: "Human",
+        required: false
     }
 
 }, { timestamps: true })
 
 
-const articles = mongoose.model("Articles",schema)
+const articles = mongoose.model("Articles", schema)
 module.exports = articles
