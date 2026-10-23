@@ -1,6 +1,7 @@
 const articlesModel = require("./../../models/articles.js")
 const { articlesValidationSchema } = require("./articles.validator.js")
 const { errorResponse, successResponse } = require("./../../utils/responses.js")
+const {isValidObjectId} = require("mongoose")
 
 exports.create = async (req, res, next) => {
     try {
@@ -46,3 +47,21 @@ exports.getAll = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.remove = async (req, res, next) => {
+    try {
+        const { id } = req.params
+
+        if(!isValidObjectId(id)){
+           return errorResponse(res,422,"The entered ID is invalid.")
+        }
+        const article = await articlesModel.findByIdAndDelete({ _id: id })
+        if (!article) {
+           return errorResponse(res, 404, "No article with this ID was found.")
+        }
+
+       return successResponse(res, 204, { message: "The article was successfully deleted.", article })
+    } catch (error) {
+        next(error)
+    }
+}
