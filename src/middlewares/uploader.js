@@ -3,7 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const fs = require("fs");
 
-const uploadDir = path.join(process.cwd(), "public/uploads/articles");
+const uploadDir = path.resolve(__dirname, "../../public/uploads/articles");
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });

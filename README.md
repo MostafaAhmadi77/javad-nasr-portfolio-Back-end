@@ -6,17 +6,17 @@ A modular RESTful API built with **Node.js, Express.js, and MongoDB** to manage 
 
 ## Overview
 
-Javad Nasr Portfolio Backend provides the server-side functionality for managing portfolio articles. It offers structured API endpoints, data validation, secure image uploads, and centralized error handling.
+Javad Nasr Portfolio Backend provides the server-side functionality for managing portfolio articles. It offers structured API endpoints, data validation, secure image uploads, file cleanup, and centralized error handling.
 
-The project follows a modular architecture designed to keep the codebase maintainable, organized, and easy to extend.
+The project follows a clean, modular architecture designed to keep the codebase maintainable, organized, and easy for developers at any level to extend.
 
 ## Features
 
-- **RESTful API:** Create, retrieve, and delete articles.
+- **RESTful API:** Create, retrieve, update, and delete articles following REST conventions.
 - **MongoDB Integration:** Store and manage article data using Mongoose.
 - **Request Validation:** Validate incoming data with Yup and Mongoose schema constraints.
-- **Image Uploads:** Upload article images using Multer with file type and size restrictions.
-- **Secure File Handling:** Generate unique filenames to prevent naming conflicts.
+- **Image Uploads & Cleanup:** Upload article images using Multer with file type and size restrictions, and automatically delete old/unused files on update or delete.
+- **Secure File Handling:** Generate unique filenames using UUIDs to prevent naming conflicts.
 - **Centralized Error Handling:** Handle validation errors, duplicate titles, invalid IDs, and server errors consistently.
 - **CORS Configuration:** Configure cross-origin requests for frontend integration.
 - **Static File Serving:** Access uploaded article images through dedicated URLs.
@@ -139,27 +139,41 @@ http://localhost:3000/api/v1
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/articles` | Create an article with an optional image |
-| GET | `/articles` | Retrieve all articles |
-| DELETE | `/articles/:id/remove` | Delete an article by ID |
+| GET | `/health` | Server health check endpoint |
+| GET | `/api/v1` | Root API welcome endpoint |
+| GET | `/api/v1/articles` | Retrieve all articles (supports `status`, `tags`, and `search` query filters) |
+| GET | `/api/v1/articles/:id` | Retrieve a single article by ID |
+| POST | `/api/v1/articles` | Create an article with an optional image |
+| PUT / PATCH | `/api/v1/articles/:id` | Update an existing article and/or its image |
+| DELETE | `/api/v1/articles/:id` | Delete an article by ID (removes associated image from disk) |
+| DELETE | `/api/v1/articles/:id/remove` | Legacy delete endpoint (maintained for backward compatibility) |
 | GET | `/uploads/:filename` | Access an uploaded image |
+
+### Query Parameters for `GET /api/v1/articles`
+
+| Parameter | Type | Description |
+|---|---|---|
+| `status` | String | Filter by status (`PUBLISHED` or `DRAFT`) |
+| `tags` | String | Filter by tag (`AI`, `Human`, `Assisted`, `Verified`, `Comprehensive`) |
+| `search` | String | Search keyword in title or summary (case-insensitive) |
 
 ### Article Fields
 
 | Field | Type | Description |
 |---|---|---|
-| `title` | String | Required, unique article title |
-| `summary` | String | Required short summary |
-| `description` | String | Required full article content |
+| `title` | String | Required, unique article title (3-128 chars) |
+| `summary` | String | Required short summary (50-250 chars) |
+| `description` | String | Required full article content (50-2000 chars) |
 | `picture` | File / String | Optional article image |
-| `status` | String | `PUBLISHED` or `DRAFT` |
-| `tags` | String | Article category or tag |
+| `status` | String | `PUBLISHED` or `DRAFT` (default: `DRAFT`) |
+| `tags` | String | `AI`, `Human`, `Assisted`, `Verified`, `Comprehensive` (default: `Human`) |
 
 ### Image Upload Restrictions
 
 - Maximum file size: **2 MB**
 - Supported formats: JPEG, PNG, and WebP
 - Uploaded filenames are generated using UUIDs.
+- Unused/old image files are automatically deleted on article update or removal.
 
 ## Error Handling
 
@@ -167,7 +181,7 @@ The API uses consistent error handling for common scenarios:
 
 | Status Code | Description |
 |---|---|
-| `400` | Invalid image or upload error |
+| `400` | Invalid image format or upload error |
 | `404` | Article or resource not found |
 | `409` | Duplicate article title |
 | `422` | Validation error or invalid MongoDB ObjectId |
