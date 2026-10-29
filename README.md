@@ -6,13 +6,14 @@ A modular RESTful API built with **Node.js, Express.js, and MongoDB** to manage 
 
 ## Overview
 
-Javad Nasr Portfolio Backend provides the server-side functionality for managing portfolio articles. It offers structured API endpoints, data validation, secure image uploads, file cleanup, and centralized error handling.
+Javad Nasr Portfolio Backend provides the server-side functionality for managing portfolio articles. It offers structured API endpoints, interactive Swagger documentation, data validation, secure image uploads, file cleanup, and centralized error handling.
 
 The project follows a clean, modular architecture designed to keep the codebase maintainable, organized, and easy for developers at any level to extend.
 
 ## Features
 
 - **RESTful API:** Create, retrieve, update, and delete articles following REST conventions.
+- **Interactive Swagger Documentation:** Explore and test all API endpoints directly from your browser via Swagger UI (`/api-docs` or `/docs`).
 - **MongoDB Integration:** Store and manage article data using Mongoose.
 - **Request Validation:** Validate incoming data with Yup and Mongoose schema constraints.
 - **Image Uploads & Cleanup:** Upload article images using Multer with file type and size restrictions, and automatically delete old/unused files on update or delete.
@@ -30,6 +31,7 @@ The project follows a clean, modular architecture designed to keep the codebase 
 | Express.js 5 | Web framework and REST API |
 | MongoDB | NoSQL database |
 | Mongoose | MongoDB object modeling |
+| Swagger UI Express | Interactive API documentation |
 | Yup | Request validation |
 | Multer | File upload handling |
 | dotenv | Environment variable management |
@@ -44,6 +46,8 @@ javad-nasr-portfolio-Back-end/
 │   └── uploads/
 │       └── articles/
 ├── src/
+│   ├── docs/
+│   │   └── swagger.js
 │   ├── middlewares/
 │   │   ├── errorHandler.js
 │   │   ├── setHeaders.js
@@ -129,6 +133,18 @@ The API will be available at:
 http://localhost:3000
 ```
 
+## Swagger API Documentation
+
+Interactive Swagger UI documentation is available at:
+
+```text
+http://localhost:3000/api-docs
+```
+
+(or automatically redirected from `http://localhost:3000/docs`)
+
+You can explore all endpoints, view request/response schemas, and test endpoints live with the **Try it out** button.
+
 ## API Reference
 
 Base URL:
@@ -139,6 +155,7 @@ http://localhost:3000/api/v1
 
 | Method | Endpoint | Description |
 |---|---|---|
+| GET | `/api-docs` | Interactive Swagger API documentation |
 | GET | `/health` | Server health check endpoint |
 | GET | `/api/v1` | Root API welcome endpoint |
 | GET | `/api/v1/articles` | Retrieve all articles (supports `status`, `tags`, and `search` query filters) |

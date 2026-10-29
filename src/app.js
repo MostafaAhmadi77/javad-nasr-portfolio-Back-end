@@ -3,6 +3,7 @@ const path = require("path");
 const { setHeaders } = require("./middlewares/setHeaders.js");
 const articlesRouter = require("./modules/articles/articles.routes.js");
 const errorHandler = require("./middlewares/errorHandler.js");
+const { swaggerUi, swaggerDocument } = require("./docs/swagger.js");
 
 const app = express();
 
@@ -18,6 +19,10 @@ app.use(
   "/uploads",
   express.static(path.resolve(__dirname, "../public/uploads/articles"))
 );
+
+// مستندات Swagger API (قابل دسترسی در /api-docs و /docs)
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get("/docs", (req, res) => res.redirect("/api-docs"));
 
 // روت بررسی سلامت سرور (Health Check)
 app.get("/health", (req, res) => {
