@@ -2,26 +2,29 @@
 
 ![Project Banner](https://raw.githubusercontent.com/MostafaAhmadi77/javad-nasr-portfolio-Back-end/main/public/banner.png)
 
-A modular RESTful API built with **Node.js, Express.js, and MongoDB** to manage portfolio articles, content, and image uploads.
+A modular RESTful API built with **Node.js, Express.js, and MongoDB** to manage portfolio articles, dual-image uploads with ordering, reading time calculation, and static asset serving.
 
 ## Overview
 
-Javad Nasr Portfolio Backend provides the server-side functionality for managing portfolio articles. It offers structured API endpoints, interactive Swagger documentation, data validation, secure image uploads, file cleanup, and centralized error handling.
+Javad Nasr Portfolio Backend provides the server-side functionality for managing portfolio articles. It offers structured API endpoints, interactive Swagger documentation, data validation, secure multi-image uploads (Cover + In-content images with explicit ordering), automatic reading time calculation, disk cleanup, and centralized error handling.
 
-The project follows a clean, modular architecture designed to keep the codebase maintainable, organized, and easy for developers at any level to extend.
+The project follows a clean, beginner-friendly yet production-ready architecture designed to keep the codebase easy to understand and extend.
 
 ## Features
 
 - **RESTful API:** Create, retrieve, update, and delete articles following REST conventions.
+- **Ordered Dual-Image Uploads:** Upload up to 2 images per article with strict ordering:
+  - `order: 1` — Primary Cover / Hero image (displayed at the top of the article and on article cards).
+  - `order: 2` — In-content image (displayed inside the body of the article between sections).
+- **Automatic Reading Time Calculation:** Specify custom reading time (e.g. `12 min read`) or let the backend calculate it automatically based on article length (~200 words per minute).
 - **Interactive Swagger Documentation:** Explore and test all API endpoints directly from your browser via Swagger UI (`/api-docs` or `/docs`).
+- **Disk File Cleanup:** Automatically deletes obsolete or deleted image files from disk when articles are updated or removed.
 - **MongoDB Integration:** Store and manage article data using Mongoose.
 - **Request Validation:** Validate incoming data with Yup and Mongoose schema constraints.
-- **Image Uploads & Cleanup:** Upload article images using Multer with file type and size restrictions, and automatically delete old/unused files on update or delete.
 - **Secure File Handling:** Generate unique filenames using UUIDs to prevent naming conflicts.
-- **Centralized Error Handling:** Handle validation errors, duplicate titles, invalid IDs, and server errors consistently.
-- **CORS Configuration:** Configure cross-origin requests for frontend integration.
-- **Static File Serving:** Access uploaded article images through dedicated URLs.
-- **Environment Configuration:** Manage application settings through environment variables.
+- **Centralized Error Handling:** Consistent error responses for validation errors, duplicates, invalid IDs, and server errors.
+- **CORS Configuration:** Configure cross-origin requests for seamless frontend integration.
+- **Static File Serving:** Access uploaded article images through dedicated `/uploads` URLs.
 
 ## Tech Stack
 
@@ -111,8 +114,6 @@ NODE_ENV=development
 MONGO_URI=mongodb://127.0.0.1:27017/javad-nasr-portfolio
 ```
 
-Update `MONGO_URI` with your MongoDB Atlas connection string if you use a cloud database.
-
 ### Run the Application
 
 Start the development server:
@@ -160,9 +161,9 @@ http://localhost:3000/api/v1
 | GET | `/api/v1` | Root API welcome endpoint |
 | GET | `/api/v1/articles` | Retrieve all articles (supports `status`, `tags`, and `search` query filters) |
 | GET | `/api/v1/articles/:id` | Retrieve a single article by ID |
-| POST | `/api/v1/articles` | Create an article with an optional image |
-| PUT / PATCH | `/api/v1/articles/:id` | Update an existing article and/or its image |
-| DELETE | `/api/v1/articles/:id` | Delete an article by ID (removes associated image from disk) |
+| POST | `/api/v1/articles` | Create an article with up to 2 ordered images |
+| PUT / PATCH | `/api/v1/articles/:id` | Update an existing article and/or its images |
+| DELETE | `/api/v1/articles/:id` | Delete an article by ID (removes associated images from disk) |
 | DELETE | `/api/v1/articles/:id/remove` | Legacy delete endpoint (maintained for backward compatibility) |
 | GET | `/uploads/:filename` | Access an uploaded image |
 
@@ -171,7 +172,7 @@ http://localhost:3000/api/v1
 | Parameter | Type | Description |
 |---|---|---|
 | `status` | String | Filter by status (`PUBLISHED` or `DRAFT`) |
-| `tags` | String | Filter by tag (`AI`, `Human`, `Assisted`, `Verified`, `Comprehensive`) |
+| `tags` | String | Filter by tag (e.g. `Strategy`, `Leadership`, `AI`) |
 | `search` | String | Search keyword in title or summary (case-insensitive) |
 
 ### Article Fields
@@ -179,18 +180,26 @@ http://localhost:3000/api/v1
 | Field | Type | Description |
 |---|---|---|
 | `title` | String | Required, unique article title (3-128 chars) |
-| `summary` | String | Required short summary (50-250 chars) |
-| `description` | String | Required full article content (50-2000 chars) |
-| `picture` | File / String | Optional article image |
+| `summary` | String | Required short summary / excerpt (20-300 chars) |
+| `description` | String | Required full article content (20-10000 chars) |
+| `readingTime` | String | Reading duration (e.g. `12 min read`). Auto-calculated if omitted. |
+| `readTime` | String | Direct alias of `readingTime` for seamless frontend compatibility |
+| `pictures` | Array | Array of image objects: `[{ url: "/uploads/...", order: 1 }, { url: "/uploads/...", order: 2 }]` |
+| `picture` | String | Direct URL of primary Cover image (`order: 1`) |
 | `status` | String | `PUBLISHED` or `DRAFT` (default: `DRAFT`) |
-| `tags` | String | `AI`, `Human`, `Assisted`, `Verified`, `Comprehensive` (default: `Human`) |
+| `tags` | String | Category tag (default: `Human`) |
+| `author` | String | Author name (default: `Javad Nasr`) |
 
 ### Image Upload Restrictions
 
-- Maximum file size: **2 MB**
+- Maximum number of files: **2 images** per article
+- File field name: `pictures` (or `picture`)
+- Order 1: Hero / Cover image
+- Order 2: In-content image
+- Maximum file size: **2 MB** per image
 - Supported formats: JPEG, PNG, and WebP
 - Uploaded filenames are generated using UUIDs.
-- Unused/old image files are automatically deleted on article update or removal.
+- Old image files are automatically deleted from disk on update or article deletion.
 
 ## Error Handling
 
@@ -198,7 +207,7 @@ The API uses consistent error handling for common scenarios:
 
 | Status Code | Description |
 |---|---|
-| `400` | Invalid image format or upload error |
+| `400` | Invalid image format or upload size error |
 | `404` | Article or resource not found |
 | `409` | Duplicate article title |
 | `422` | Validation error or invalid MongoDB ObjectId |

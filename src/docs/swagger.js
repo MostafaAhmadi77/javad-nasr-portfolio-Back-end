@@ -7,7 +7,7 @@ const swaggerDocument = {
     title: "Javad Nasr Portfolio — API Documentation",
     version: "1.0.0",
     description:
-      "مستندات کامل API بک‌اند پروژه پورتفولیو جواد نصر برای مدیریت مقالات و تصاویر",
+      "مستندات کامل API بک‌اند پروژه پورتفولیو جواد نصر برای مدیریت مقالات، آپلود چندگانه تصاویر (با حفظ ترتیب) و محاسبه زمان خواندن",
     contact: {
       name: "Taha Ayati (DevLab)",
       email: "tahaayati2007@gmail.com",
@@ -22,7 +22,7 @@ const swaggerDocument = {
   tags: [
     {
       name: "Articles",
-      description: "مدیریت مقالات پورتفولیو (ایجاد، دریافت، ویرایش، حذف)",
+      description: "مدیریت مقالات پورتفولیو (ایجاد، دریافت، ویرایش، حذف، آپلود تصاویر مرتب)",
     },
     {
       name: "System",
@@ -34,7 +34,6 @@ const swaggerDocument = {
       get: {
         tags: ["System"],
         summary: "بررسی وضعیت سلامت سرور (Health Check)",
-        description: "این اندپوینت وضعیت فعال بودن سرور و آپ‌تایم را برمی‌گرداند.",
         responses: {
           200: {
             description: "سرور فعال و بدون مشکل است",
@@ -47,10 +46,10 @@ const swaggerDocument = {
                     statusCode: { type: "integer", example: 200 },
                     success: { type: "boolean", example: true },
                     message: { type: "string", example: "Server is healthy" },
-                    uptime: { type: "number", example: 12.34 },
+                    uptime: { type: "number", example: 15.42 },
                     timestamp: {
                       type: "string",
-                      example: "2026-10-29T19:00:00.000Z",
+                      example: "2026-10-30T10:00:00.000Z",
                     },
                   },
                 },
@@ -63,7 +62,7 @@ const swaggerDocument = {
     "/api/v1": {
       get: {
         tags: ["System"],
-        summary: "روت خوش‌آمدگویی و نسخه API",
+        summary: "روت خوش‌آمدگویی نسخه ۱ API",
         responses: {
           200: {
             description: "پیام خوش‌آمدگویی",
@@ -92,13 +91,13 @@ const swaggerDocument = {
         tags: ["Articles"],
         summary: "دریافت همه مقالات با امکان فیلتر و جستجو",
         description:
-          "لیست مقالات را به ترتیب جدیدترین برمی‌گرداند. امکان فیلتر با وضعیت، تگ و کلمه کلیدی وجود دارد.",
+          "لیست مقالات را با تصاویر مرتب‌شده و مدت زمان مطالعه برمی‌گرداند.",
         parameters: [
           {
             name: "status",
             in: "query",
             required: false,
-            description: "فیلتر بر اساس وضعیت انتشار مقاله",
+            description: "فیلتر بر اساس وضعیت (PUBLISHED یا DRAFT)",
             schema: {
               type: "string",
               enum: ["PUBLISHED", "DRAFT"],
@@ -108,17 +107,16 @@ const swaggerDocument = {
             name: "tags",
             in: "query",
             required: false,
-            description: "فیلتر بر اساس دسته‌بندی یا تگ مقاله",
+            description: "فیلتر بر اساس دسته‌بندی موضوعی",
             schema: {
               type: "string",
-              enum: ["AI", "Human", "Assisted", "Verified", "Comprehensive"],
             },
           },
           {
             name: "search",
             in: "query",
             required: false,
-            description: "جستجو در عنوان یا خلاصه مقاله",
+            description: "جستجو در عنوان یا متن خلاصه مقاله",
             schema: {
               type: "string",
             },
@@ -126,7 +124,7 @@ const swaggerDocument = {
         ],
         responses: {
           200: {
-            description: "لیست مقالات با موفقیت دریافت شد",
+            description: "لیست مقالات با موفقیت بازگردانده شد",
             content: {
               "application/json": {
                 schema: {
@@ -139,9 +137,9 @@ const swaggerDocument = {
       },
       post: {
         tags: ["Articles"],
-        summary: "ایجاد مقاله جدید با عکس اختیاری",
+        summary: "ایجاد مقاله جدید با حداکثر ۲ تصویر با ترتیب مشخص",
         description:
-          "یک مقاله جدید ثبت می‌کند. در صورت تمایل می‌توانید عکس (حداکثر ۲ مگابایت، فرمت‌های jpg, png, webp) آپلود کنید.",
+          "یک مقاله جدید ثبت می‌کند. امکان ارسال حداکثر ۲ تصویر با فیلد pictures وجود دارد. عکس اول به عنوان تصویر شاخص (Hero/Cover با order: 1) و عکس دوم به عنوان تصویر محتوایی (In-content با order: 2) ثبت می‌شود.",
         requestBody: {
           required: true,
           content: {
@@ -152,20 +150,26 @@ const swaggerDocument = {
                 properties: {
                   title: {
                     type: "string",
-                    description: "عنوان مقاله (۳ تا ۱۲۸ کاراکتر و غیرتکراری)",
-                    example: "آشنایی با هوش مصنوعی نوین",
+                    description: "عنوان مقاله (۳ تا ۱۲۸ کاراکتر)",
+                    example: "The New Performance Agenda: What Organizations Need to Rethink in 2026",
                   },
                   summary: {
                     type: "string",
-                    description: "خلاصه کوتاه مقاله (۵۰ تا ۲۵۰ کاراکتر)",
+                    description: "خلاصه کوتاه مقاله (Excerpt)",
                     example:
-                      "در این مقاله به بررسی کاربردهای مدرن هوش مصنوعی و تاثیرات آن بر زندگی روزمره می‌پردازیم.",
+                      "Insights from McKinsey's State of Organizations 2026 — and what they mean for business leaders.",
                   },
                   description: {
                     type: "string",
-                    description: "متن کامل مقاله (۵۰ تا ۲۰۰۰ کاراکتر)",
+                    description: "متن کامل محتوای مقاله",
                     example:
-                      "هوش مصنوعی یکی از جذاب‌ترین حوزه‌های فناوری است که با سرعت فوق‌العاده‌ای در حال پیشرفت است و صنایع گوناگون را دگرگون ساخته است.",
+                      "The business environment has changed faster than many organizations have been able to adapt. Technology and AI are redefining how work gets done.",
+                  },
+                  readingTime: {
+                    type: "string",
+                    description:
+                      "مدت زمان مطالعه (اختیاری - در صورت ارسال نشدن خودکار بر اساس متن محاسبه می‌شود)",
+                    example: "12 min read",
                   },
                   status: {
                     type: "string",
@@ -175,20 +179,22 @@ const swaggerDocument = {
                   },
                   tags: {
                     type: "string",
-                    enum: [
-                      "AI",
-                      "Human",
-                      "Assisted",
-                      "Verified",
-                      "Comprehensive",
-                    ],
-                    default: "Human",
-                    description: "دسته‌بندی مقاله",
+                    default: "Strategy",
+                    description: "دسته‌بندی یا تگ مقاله",
                   },
-                  picture: {
+                  author: {
                     type: "string",
-                    format: "binary",
-                    description: "فایل تصویر مقاله (اختیاری، حداکثر ۲ مگابایت)",
+                    default: "Javad Nasr",
+                    description: "نام نویسنده مقاله",
+                  },
+                  pictures: {
+                    type: "array",
+                    items: {
+                      type: "string",
+                      format: "binary",
+                    },
+                    description:
+                      "فایل‌های تصاویر (حداکثر ۲ تصویر، فرمت‌های jpg, png, webp). تصویر اول = Cover/Hero و تصویر دوم = In-content",
                   },
                 },
               },
@@ -223,7 +229,7 @@ const swaggerDocument = {
             },
           },
           422: {
-            description: "خطای اعتبارسنجی مقادیر ورودی",
+            description: "خطای اعتبارسنجی مقادیر",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -236,13 +242,13 @@ const swaggerDocument = {
     "/api/v1/articles/{id}": {
       get: {
         tags: ["Articles"],
-        summary: "دریافت یک مقاله بر اساس شناسه (ID)",
+        summary: "دریافت جزئیات مقاله با شناسه",
         parameters: [
           {
             name: "id",
             in: "path",
             required: true,
-            description: "شناسه ۲۴ کاراکتری مقاله در مونگو (MongoDB ObjectId)",
+            description: "شناسه ۲۴ کاراکتری مقاله در MongoDB",
             schema: {
               type: "string",
               example: "654321654321654321654321",
@@ -269,7 +275,7 @@ const swaggerDocument = {
             },
           },
           422: {
-            description: "شناسه وارد شده معتبر نیست",
+            description: "شناسه ارسالی نامعتبر است",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -280,15 +286,13 @@ const swaggerDocument = {
       },
       put: {
         tags: ["Articles"],
-        summary: "ویرایش مقاله بر اساس شناسه (ID)",
-        description:
-          "فیلدهای مقاله را ویرایش می‌کند. در صورت آپلود عکس جدید، تصویر قبلی به صورت خودکار از سرور پاک می‌شود.",
+        summary: "ویرایش مقاله و به‌روزرسانی تصاویر با ترتیب",
         parameters: [
           {
             name: "id",
             in: "path",
             required: true,
-            description: "شناسه ۲۴ کاراکتری مقاله در مونگو",
+            description: "شناسه مقاله در MongoDB",
             schema: {
               type: "string",
               example: "654321654321654321654321",
@@ -302,36 +306,23 @@ const swaggerDocument = {
               schema: {
                 type: "object",
                 properties: {
-                  title: {
-                    type: "string",
-                    description: "عنوان جدید مقاله",
-                  },
-                  summary: {
-                    type: "string",
-                    description: "خلاصه جدید مقاله",
-                  },
-                  description: {
-                    type: "string",
-                    description: "متن کامل جدید مقاله",
-                  },
+                  title: { type: "string" },
+                  summary: { type: "string" },
+                  description: { type: "string" },
+                  readingTime: { type: "string" },
                   status: {
                     type: "string",
                     enum: ["PUBLISHED", "DRAFT"],
                   },
-                  tags: {
-                    type: "string",
-                    enum: [
-                      "AI",
-                      "Human",
-                      "Assisted",
-                      "Verified",
-                      "Comprehensive",
-                    ],
-                  },
-                  picture: {
-                    type: "string",
-                    format: "binary",
-                    description: "فایل تصویر جدید برای جایگزینی تصویر قبلی",
+                  tags: { type: "string" },
+                  author: { type: "string" },
+                  pictures: {
+                    type: "array",
+                    items: {
+                      type: "string",
+                      format: "binary",
+                    },
+                    description: "تصاویر جدید با ترتیب ۱ و ۲ جهت جایگزینی",
                   },
                 },
               },
@@ -350,7 +341,7 @@ const swaggerDocument = {
             },
           },
           404: {
-            description: "مقاله‌ای با این شناسه یافت نشد",
+            description: "مقاله‌ای یافت نشد",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -366,7 +357,7 @@ const swaggerDocument = {
             },
           },
           422: {
-            description: "شناسه یا داده‌های ارسالی نامعتبر هستند",
+            description: "داده‌های ارسالی یا شناسه نامعتبر است",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -377,15 +368,13 @@ const swaggerDocument = {
       },
       delete: {
         tags: ["Articles"],
-        summary: "حذف مقاله بر اساس شناسه (ID)",
-        description:
-          "مقاله را از پایگاه داده و فایل تصویر مرتبط با آن را از روی دیسک سرور حذف می‌کند.",
+        summary: "حذف مقاله و تصاویر آن از سرور",
         parameters: [
           {
             name: "id",
             in: "path",
             required: true,
-            description: "شناسه ۲۴ کاراکتری مقاله در مونگو",
+            description: "شناسه مقاله در MongoDB",
             schema: {
               type: "string",
               example: "654321654321654321654321",
@@ -408,7 +397,7 @@ const swaggerDocument = {
                       properties: {
                         message: {
                           type: "string",
-                          example: "The article was successfully deleted.",
+                          example: "مقاله و تصاویر آن با موفقیت حذف شدند.",
                         },
                       },
                     },
@@ -418,7 +407,7 @@ const swaggerDocument = {
             },
           },
           404: {
-            description: "مقاله‌ای با این شناسه یافت نشد",
+            description: "مقاله‌ای یافت نشد",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -426,7 +415,7 @@ const swaggerDocument = {
             },
           },
           422: {
-            description: "شناسه وارد شده نامعتبر است",
+            description: "شناسه نامعتبر است",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -439,15 +428,13 @@ const swaggerDocument = {
     "/api/v1/articles/{id}/remove": {
       delete: {
         tags: ["Articles"],
-        summary: "حذف مقاله (مسیر قدیمی - جهت حفظ سازگاری)",
-        description:
-          "این مسیر به عنوان آلترناتیو روت DELETE /api/v1/articles/{id} حفظ شده است.",
+        summary: "حذف مقاله (مسیر قدیمی جهت سازگاری)",
         parameters: [
           {
             name: "id",
             in: "path",
             required: true,
-            description: "شناسه مقاله در مونگو",
+            description: "شناسه مقاله در MongoDB",
             schema: {
               type: "string",
               example: "654321654321654321654321",
@@ -455,40 +442,65 @@ const swaggerDocument = {
           },
         ],
         responses: {
-          200: {
-            description: "مقاله با موفقیت حذف شد",
-          },
-          404: {
-            description: "مقاله‌ای یافت نشد",
-          },
-          422: {
-            description: "شناسه نامعتبر است",
-          },
+          200: { description: "مقاله حذف شد" },
+          404: { description: "یافت نشد" },
+          422: { description: "شناسه نامعتبر است" },
         },
       },
     },
   },
   components: {
     schemas: {
+      ArticlePicture: {
+        type: "object",
+        properties: {
+          url: {
+            type: "string",
+            example: "/uploads/9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d.webp",
+          },
+          order: {
+            type: "integer",
+            example: 1,
+            description: "ترتیب عکس (۱ برای عکس اصلی/شاخص Hero، و ۲ برای عکس داخل محتوا In-content)",
+          },
+        },
+      },
       Article: {
         type: "object",
         properties: {
           _id: { type: "string", example: "67215f98a287901b2c45e891" },
-          title: { type: "string", example: "آشنایی با هوش مصنوعی نوین" },
+          title: {
+            type: "string",
+            example: "The New Performance Agenda: What Organizations Need to Rethink in 2026",
+          },
           summary: {
             type: "string",
             example:
-              "در این مقاله به بررسی کاربردهای مدرن هوش مصنوعی و تاثیرات آن می‌پردازیم.",
+              "Insights from McKinsey's State of Organizations 2026 — and what they mean for business leaders.",
           },
           description: {
             type: "string",
             example:
-              "متن کامل توضیحات مقاله که شامل جزئیات تکنولوژی و نکات فنی است...",
+              "The business environment has changed faster than many organizations have been able to adapt...",
+          },
+          readingTime: {
+            type: "string",
+            example: "12 min read",
+          },
+          readTime: {
+            type: "string",
+            example: "12 min read",
+            description: "فیلد هماهنگ با فرانت‌پروژه",
+          },
+          pictures: {
+            type: "array",
+            items: { $ref: "#/components/schemas/ArticlePicture" },
           },
           picture: {
             type: "string",
             nullable: true,
-            example: "/uploads/a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg",
+            example: "/uploads/9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d.webp",
+            description: "آدرس تصویر اصلی/شاخص",
           },
           status: {
             type: "string",
@@ -497,16 +509,19 @@ const swaggerDocument = {
           },
           tags: {
             type: "string",
-            enum: ["AI", "Human", "Assisted", "Verified", "Comprehensive"],
-            example: "AI",
+            example: "Strategy",
+          },
+          author: {
+            type: "string",
+            example: "Javad Nasr",
           },
           createdAt: {
             type: "string",
-            example: "2026-10-29T18:00:00.000Z",
+            example: "2026-10-30T10:00:00.000Z",
           },
           updatedAt: {
             type: "string",
-            example: "2026-10-29T18:00:00.000Z",
+            example: "2026-10-30T10:00:00.000Z",
           },
         },
       },
@@ -523,7 +538,7 @@ const swaggerDocument = {
                 type: "array",
                 items: { $ref: "#/components/schemas/Article" },
               },
-              count: { type: "integer", example: 5 },
+              count: { type: "integer", example: 1 },
             },
           },
         },
@@ -539,7 +554,7 @@ const swaggerDocument = {
             properties: {
               message: {
                 type: "string",
-                example: "Article created successfully.",
+                example: "مقاله با موفقیت ایجاد شد.",
               },
               article: { $ref: "#/components/schemas/Article" },
             },
@@ -554,11 +569,11 @@ const swaggerDocument = {
           success: { type: "boolean", example: false },
           error: {
             type: "string",
-            example: "The entered ID is invalid.",
+            example: "شناسه مقاله نامعتبر است.",
           },
           message: {
             type: "string",
-            example: "The entered ID is invalid.",
+            example: "شناسه مقاله نامعتبر است.",
           },
         },
       },
