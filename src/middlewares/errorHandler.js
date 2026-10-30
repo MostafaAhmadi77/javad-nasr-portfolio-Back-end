@@ -1,15 +1,15 @@
 const multer = require("multer");
 
-// میان‌افزار متمرکز مدیریت خطاهای سرور
+// Centralized error handling middleware
 module.exports = (err, req, res, next) => {
-  // ۱. خطاهای پکیج Multer (آپلود عکس)
+  // 1. Multer upload errors
   if (err instanceof multer.MulterError) {
     const msg =
       err.code === "LIMIT_FILE_SIZE"
-        ? "حجم هر تصویر نباید بیشتر از ۲ مگابایت باشد."
+        ? "Image size must not exceed 2 MB."
         : err.code === "LIMIT_UNEXPECTED_FILE"
-        ? "حداکثر ۲ تصویر می‌توانید آپلود کنید."
-        : "خطایی هنگام آپلود تصویر رخ داد.";
+        ? "Maximum of 2 images allowed."
+        : "An error occurred while uploading the image.";
 
     return res.status(400).json({
       status: 400,
@@ -20,20 +20,20 @@ module.exports = (err, req, res, next) => {
     });
   }
 
-  // ۲. خطای فرمت نامعتبر تصویر
+  // 2. Custom file format error
   if (err.message && err.message.includes("Invalid image format")) {
     return res.status(400).json({
       status: 400,
       statusCode: 400,
       success: false,
-      error: "فرمت تصویر معتبر نیست. فقط فرمت‌های JPEG، PNG و WebP مجاز هستند.",
-      message: "فرمت تصویر معتبر نیست. فقط فرمت‌های JPEG، PNG و WebP مجاز هستند.",
+      error: "Invalid image format. Only JPEG, PNG, and WebP are allowed.",
+      message: "Invalid image format. Only JPEG, PNG, and WebP are allowed.",
     });
   }
 
-  // ۳. خطای کلید تکراری در مونگو (مانند عنوان مقاله تکراری - کد 11000)
+  // 3. MongoDB duplicate key error (code 11000)
   if (err.code === 11000) {
-    const msg = "مقاله‌ای با این عنوان قبلاً ثبت شده است.";
+    const msg = "Article with this title already exists.";
     return res.status(409).json({
       status: 409,
       statusCode: 409,
@@ -43,7 +43,7 @@ module.exports = (err, req, res, next) => {
     });
   }
 
-  // ۴. خطاهای اعتبارسنجی Yup یا Mongoose
+  // 4. Validation errors (Yup or Mongoose)
   const statusCode =
     err.name === "ValidationError"
       ? 422
@@ -53,8 +53,8 @@ module.exports = (err, req, res, next) => {
     statusCode === 422
       ? err.errors || err.message
       : statusCode === 500
-      ? "یک خطای داخلی در سرور رخ داده است."
-      : err.message || "خطایی رخ داده است.";
+      ? "An internal server error occurred."
+      : err.message || "An error occurred.";
 
   return res.status(statusCode).json({
     status: statusCode,
@@ -64,6 +64,6 @@ module.exports = (err, req, res, next) => {
     message:
       typeof errorMessage === "string"
         ? errorMessage
-        : "خطای اعتبارسنجی مقادیر ورودی رخ داد.",
+        : "Validation error occurred.",
   });
 };

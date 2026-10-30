@@ -8,10 +8,10 @@ const {
 } = require("./articles.validator.js");
 const { errorResponse, successResponse } = require("../../utils/responses.js");
 
-// مسیر پوشه ذخیره عکس‌ها
+// Path to the uploads directory
 const uploadDir = path.resolve(__dirname, "../../../public/uploads/articles");
 
-// تابع کمکی برای استخراج فایل‌های آپلود شده از درخواست
+// Helper: Get array of uploaded files from request
 function getUploadedFiles(req) {
   if (Array.isArray(req.files)) {
     return req.files;
@@ -28,7 +28,7 @@ function getUploadedFiles(req) {
   return [];
 }
 
-// تابع کمکی برای حذف یک فایل از روی حافظه سرور
+// Helper: Safely delete a file from disk
 function deleteFileByUrl(fileUrl) {
   if (!fileUrl) return;
   const filename = path.basename(fileUrl);
@@ -37,12 +37,12 @@ function deleteFileByUrl(fileUrl) {
     try {
       fs.unlinkSync(filePath);
     } catch (err) {
-      console.error("خطا در حذف فایل:", err.message);
+      console.error("Error deleting file:", err.message);
     }
   }
 }
 
-// تابع کمکی برای حذف تمام فایل‌های تازه آپلود شده در صورت وقوع خطا
+// Helper: Clean up freshly uploaded files when an error occurs
 function cleanupUploadedFiles(files) {
   if (!files || !files.length) return;
   files.forEach((file) => {
@@ -50,33 +50,32 @@ function cleanupUploadedFiles(files) {
   });
 }
 
-// تابع محاسبه خودکار مدت زمان مطالعه مقاله (بر اساس ۲۰۰ کلمه در دقیقه)
+// Helper: Calculate estimated reading time based on 200 words per minute
 function calculateReadingTime(text) {
   if (!text) return "1 min read";
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
-  const minutes = Math.max(1, Math.ceil(words / 200));
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.ceil(wordCount / 200));
   return `${minutes} min read`;
 }
 
-// تابع آماده‌سازی خروجی مقاله برای فرانت‌اند
+// Helper: Format article object for frontend compatibility
 function formatArticle(articleDoc) {
   const article = articleDoc.toObject ? articleDoc.toObject() : articleDoc;
   const pictures = Array.isArray(article.pictures) ? article.pictures : [];
 
-  // عکس اول برای استفاده سریع فرانت
+  // Primary cover image for quick access
   const primaryPicture = pictures.length > 0 ? pictures[0].url : article.picture || null;
 
   return {
     ...article,
     pictures,
     picture: primaryPicture,
-    // ایجاد فیلد readTime برای هماهنگی مستقیم با فرانت پروژه
     readTime: article.readingTime || "3 min read",
   };
 }
 
 // ==========================================
-// ۱. ایجاد مقاله جدید (Create Article)
+// 1. Create a new article
 // ==========================================
 exports.create = async (req, res, next) => {
   const uploadedFiles = getUploadedFiles(req).slice(0, 2);
@@ -84,7 +83,7 @@ exports.create = async (req, res, next) => {
   try {
     const { title, description, summary, status, tags, readingTime, author } = req.body;
 
-    // مرحله ۱: اعتبارسنجی ورودی‌ها با Yup
+    // Step 1: Validate input fields
     try {
       await articlesValidationSchema.validate(
         { title, description, summary, status, tags, readingTime, author },
@@ -95,26 +94,26 @@ exports.create = async (req, res, next) => {
       return next(validationErr);
     }
 
-    // مرحله ۲: بررسی تکراری نبودن عنوان مقاله
+    // Step 2: Check if article title already exists
     const isExist = await Article.findOne({ title: title.trim() });
     if (isExist) {
       cleanupUploadedFiles(uploadedFiles);
-      return errorResponse(res, 409, "مقاله‌ای با این عنوان قبلاً ثبت شده است.");
+      return errorResponse(res, 409, "Article with this title already exists.");
     }
 
-    // مرحله ۳: ساخت آرایه تصاویر با رعایت ترتیب دقیق (order: 1 و order: 2)
+    // Step 3: Create ordered pictures array (order: 1 for Cover, order: 2 for In-content)
     const pictures = uploadedFiles.map((file, index) => ({
       url: `/uploads/${file.filename}`,
-      order: index + 1, // تصویر اول = 1 (Hero/Cover)، تصویر دوم = 2 (In-content)
+      order: index + 1,
     }));
 
-    // مرحله ۴: تعیین مدت زمان خواندن (دستی یا خودکار)
+    // Step 4: Determine reading time (custom or auto-calculated)
     const finalReadingTime =
       readingTime && readingTime.trim()
         ? readingTime.trim()
         : calculateReadingTime(description);
 
-    // مرحله ۵: ذخیره در پایگاه داده MongoDB
+    // Step 5: Save article to MongoDB
     const article = await Article.create({
       title: title.trim(),
       description: description.trim(),
@@ -123,12 +122,12 @@ exports.create = async (req, res, next) => {
       pictures,
       picture: pictures.length > 0 ? pictures[0].url : null,
       status: status ? status.trim() : "DRAFT",
-      tags: tags ? tags.trim() : "Human",
+      tags: tags ? tags.trim() : "Strategy",
       author: author ? author.trim() : "Javad Nasr",
     });
 
     return successResponse(res, 201, {
-      message: "مقاله با موفقیت ایجاد شد.",
+      message: "Article created successfully.",
       article: formatArticle(article),
     });
   } catch (err) {
@@ -138,7 +137,7 @@ exports.create = async (req, res, next) => {
 };
 
 // ==========================================
-// ۲. دریافت همه مقالات (Get All Articles)
+// 2. Get all articles
 // ==========================================
 exports.getAll = async (req, res, next) => {
   try {
@@ -168,19 +167,19 @@ exports.getAll = async (req, res, next) => {
 };
 
 // ==========================================
-// ۳. دریافت یک مقاله با شناسه (Get Article by ID)
+// 3. Get single article by ID
 // ==========================================
 exports.getOne = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     if (!isValidObjectId(id)) {
-      return errorResponse(res, 422, "شناسه مقاله نامعتبر است.");
+      return errorResponse(res, 422, "The entered ID is invalid.");
     }
 
     const article = await Article.findById(id);
     if (!article) {
-      return errorResponse(res, 404, "مقاله‌ای با این شناسه یافت نشد.");
+      return errorResponse(res, 404, "No article with this ID was found.");
     }
 
     return successResponse(res, 200, {
@@ -192,7 +191,7 @@ exports.getOne = async (req, res, next) => {
 };
 
 // ==========================================
-// ۴. ویرایش مقاله (Update Article)
+// 4. Update article by ID
 // ==========================================
 exports.update = async (req, res, next) => {
   const uploadedFiles = getUploadedFiles(req).slice(0, 2);
@@ -202,18 +201,18 @@ exports.update = async (req, res, next) => {
 
     if (!isValidObjectId(id)) {
       cleanupUploadedFiles(uploadedFiles);
-      return errorResponse(res, 422, "شناسه مقاله نامعتبر است.");
+      return errorResponse(res, 422, "The entered ID is invalid.");
     }
 
     const existingArticle = await Article.findById(id);
     if (!existingArticle) {
       cleanupUploadedFiles(uploadedFiles);
-      return errorResponse(res, 404, "مقاله‌ای با این شناسه یافت نشد.");
+      return errorResponse(res, 404, "No article with this ID was found.");
     }
 
     const { title, description, summary, status, tags, readingTime, author } = req.body;
 
-    // اعتبارسنجی فیلدهای ارسالی
+    // Validate fields to update
     const fieldsToValidate = {};
     if (title !== undefined) fieldsToValidate.title = title;
     if (description !== undefined) fieldsToValidate.description = description;
@@ -232,7 +231,7 @@ exports.update = async (req, res, next) => {
       return next(validationErr);
     }
 
-    // بررسی عنوان تکراری
+    // Check for duplicate title
     if (title && title.trim() !== existingArticle.title) {
       const duplicate = await Article.findOne({
         title: title.trim(),
@@ -240,11 +239,11 @@ exports.update = async (req, res, next) => {
       });
       if (duplicate) {
         cleanupUploadedFiles(uploadedFiles);
-        return errorResponse(res, 409, "مقاله‌ای با این عنوان از قبل وجود دارد.");
+        return errorResponse(res, 409, "Article with this title already exists.");
       }
     }
 
-    // آماده‌سازی داده‌های جدید برای به‌روزرسانی
+    // Build update object
     const updateData = {};
     if (title !== undefined) updateData.title = title.trim();
     if (summary !== undefined) updateData.summary = summary.trim();
@@ -259,16 +258,14 @@ exports.update = async (req, res, next) => {
       updateData.readingTime = calculateReadingTime(description);
     }
 
-    // در صورت آپلود تصاویر جدید، تصاویر قدیمی را پاک کرده و تصاویر جدید را قرار می‌دهیم
+    // If new images are uploaded, delete old images and save new ones with ordering
     if (uploadedFiles.length > 0) {
-      // حذف عکس‌های قدیمی
       if (existingArticle.pictures && existingArticle.pictures.length > 0) {
         existingArticle.pictures.forEach((pic) => deleteFileByUrl(pic.url));
       } else if (existingArticle.picture) {
         deleteFileByUrl(existingArticle.picture);
       }
 
-      // تنظیم عکس‌های جدید با ترتیب
       const newPictures = uploadedFiles.map((file, index) => ({
         url: `/uploads/${file.filename}`,
         order: index + 1,
@@ -285,7 +282,7 @@ exports.update = async (req, res, next) => {
     );
 
     return successResponse(res, 200, {
-      message: "مقاله با موفقیت ویرایش شد.",
+      message: "Article updated successfully.",
       article: formatArticle(updatedArticle),
     });
   } catch (err) {
@@ -295,22 +292,22 @@ exports.update = async (req, res, next) => {
 };
 
 // ==========================================
-// ۵. حذف مقاله (Delete Article)
+// 5. Delete article by ID
 // ==========================================
 exports.remove = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     if (!isValidObjectId(id)) {
-      return errorResponse(res, 422, "شناسه مقاله نامعتبر است.");
+      return errorResponse(res, 422, "The entered ID is invalid.");
     }
 
     const article = await Article.findByIdAndDelete(id);
     if (!article) {
-      return errorResponse(res, 404, "مقاله‌ای با این شناسه یافت نشد.");
+      return errorResponse(res, 404, "No article with this ID was found.");
     }
 
-    // حذف تمامی عکس‌های مقاله از حافظه سرور
+    // Delete associated image files from disk
     if (article.pictures && article.pictures.length > 0) {
       article.pictures.forEach((pic) => deleteFileByUrl(pic.url));
     } else if (article.picture) {
@@ -318,7 +315,7 @@ exports.remove = async (req, res, next) => {
     }
 
     return successResponse(res, 200, {
-      message: "مقاله و تصاویر آن با موفقیت حذف شدند.",
+      message: "The article and its pictures were successfully deleted.",
       article: formatArticle(article),
     });
   } catch (error) {

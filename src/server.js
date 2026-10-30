@@ -4,13 +4,13 @@ dotenv.config();
 const mongoose = require("mongoose");
 const app = require("./app.js");
 
-// اتصال به دیتابیس MongoDB
+// Connect to MongoDB database
 async function connectionToDB() {
   await mongoose.connect(process.env.MONGO_URI);
   console.log(`MongoDB connected ---> ${mongoose.connection.host}`);
 }
 
-// راه‌اندازی سرور Express
+// Start Express HTTP server
 function startServer() {
   const port = process.env.PORT || 3000;
 
@@ -19,7 +19,7 @@ function startServer() {
   });
 }
 
-// اجرای برنامه
+// Main application runner
 async function run() {
   try {
     await connectionToDB();

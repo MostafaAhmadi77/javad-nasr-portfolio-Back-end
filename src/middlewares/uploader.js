@@ -3,15 +3,15 @@ const path = require("path");
 const crypto = require("crypto");
 const fs = require("fs");
 
-// مسیر پوشه ذخیره‌سازی عکس‌های آپلود شده در سرور
+// Uploads directory path
 const uploadDir = path.resolve(__dirname, "../../public/uploads/articles");
 
-// اگر پوشه وجود نداشت، خودکار آن را می‌سازیم
+// Create uploads directory if it does not exist
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// تنظیم محل ذخیره و ساخت نام یکتا با شناسه تصادفی (UUID)
+// Storage configuration with unique UUID filenames
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// فیلتر فرمت‌های مجاز تصاویر
+// File filter: only JPEG, PNG, and WebP are allowed
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
@@ -35,12 +35,12 @@ const fileFilter = (req, file, cb) => {
   cb(error);
 };
 
-// کانفیگ اصلی آپلود فایل با حداکثر ۲ مگابایت برای هر تصویر
+// Multer upload middleware with 2MB limit per image
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024, // حداکثر ۲ مگابایت
+    fileSize: 2 * 1024 * 1024, // 2 MB max
   },
 });
 

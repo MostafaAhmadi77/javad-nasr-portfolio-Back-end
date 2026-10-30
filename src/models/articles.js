@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
-// اسکیما (ساختار) مقالات در پایگاه داده MongoDB
+// Article schema for MongoDB
 const articleSchema = new mongoose.Schema(
   {
-    // ۱. عنوان مقاله
+    // 1. Article title (must be unique)
     title: {
       type: String,
       required: true,
@@ -13,7 +13,7 @@ const articleSchema = new mongoose.Schema(
       maxlength: 128,
     },
 
-    // ۲. خلاصه کوتاه مقاله (Excerpt)
+    // 2. Short summary / excerpt
     summary: {
       type: String,
       required: true,
@@ -22,7 +22,7 @@ const articleSchema = new mongoose.Schema(
       maxlength: 300,
     },
 
-    // ۳. متن کامل مقاله
+    // 3. Full article content
     description: {
       type: String,
       required: true,
@@ -31,16 +31,16 @@ const articleSchema = new mongoose.Schema(
       maxlength: 10000,
     },
 
-    // ۴. مدت زمان تقریبی خواندن مقاله (مثال: "5 min read")
+    // 4. Estimated reading time (e.g. "5 min read")
     readingTime: {
       type: String,
       default: "3 min read",
       trim: true,
     },
 
-    // ۵. لیست تصاویر مقاله با حفظ ترتیب دقیق (حداکثر ۲ تصویر)
-    // عکس اول (order: 1) = عکس اصلی یا شاخص (Hero Image)
-    // عکس دوم (order: 2) = عکس داخلی محتوا (In-content Image)
+    // 5. Ordered pictures array (up to 2 pictures)
+    // order 1 = Cover/Hero image
+    // order 2 = In-content image
     pictures: [
       {
         url: { type: String, required: true },
@@ -48,28 +48,28 @@ const articleSchema = new mongoose.Schema(
       },
     ],
 
-    // ۶. تصویر شاخص اصلی (جهت سازگاری ساده با کدهای قبلی)
+    // 6. Direct primary cover image (for backward compatibility)
     picture: {
       type: String,
       default: null,
       trim: true,
     },
 
-    // ۷. وضعیت انتشار (منتشر شده یا پیش‌نویس)
+    // 7. Publishing status
     status: {
       type: String,
       enum: ["PUBLISHED", "DRAFT"],
       default: "DRAFT",
     },
 
-    // ۸. دسته‌بندی یا تگ موضوعی
+    // 8. Topic or category tag
     tags: {
       type: String,
-      enum: ["AI", "Human", "Assisted", "Verified", "Comprehensive", "Strategy", "Leadership"],
-      default: "Human",
+      default: "Strategy",
+      trim: true,
     },
 
-    // ۹. نویسنده مقاله
+    // 9. Article author
     author: {
       type: String,
       default: "Javad Nasr",
@@ -77,7 +77,7 @@ const articleSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // اضافه شدن خودکار createdAt و updatedAt
+    timestamps: true, // Automatically adds createdAt and updatedAt
     versionKey: false,
   }
 );

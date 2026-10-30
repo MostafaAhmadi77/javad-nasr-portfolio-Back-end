@@ -3,27 +3,27 @@ const router = express.Router();
 const controller = require("./articles.controller.js");
 const upload = require("../../middlewares/uploader.js");
 
-// میان‌افزار پذیرش حداکثر ۲ تصویر با نام فیلد pictures یا picture
+// Accept up to 2 images using field name "pictures" or "picture"
 const uploadPictures = upload.fields([
   { name: "pictures", maxCount: 2 },
   { name: "picture", maxCount: 2 },
 ]);
 
-// روت‌های مربوط به کل مقالات
+// Routes for the collection of articles
 router
   .route("/")
-  .get(controller.getAll) // دریافت همه مقالات
-  .post(uploadPictures, controller.create); // ایجاد مقاله جدید با حداکثر ۲ عکس با ترتیب
+  .get(controller.getAll) // Retrieve all articles
+  .post(uploadPictures, controller.create); // Create an article with up to 2 ordered images
 
-// روت‌های مربوط به یک مقاله مشخص بر اساس شناسه
+// Routes for a single article by ID
 router
   .route("/:id")
-  .get(controller.getOne) // دریافت جزئیات مقاله
-  .put(uploadPictures, controller.update) // ویرایش مقاله و تصاویر
-  .patch(uploadPictures, controller.update) // ویرایش جزئی مقاله
-  .delete(controller.remove); // حذف مقاله و تصاویر مربوطه
+  .get(controller.getOne) // Retrieve single article
+  .put(uploadPictures, controller.update) // Update article
+  .patch(uploadPictures, controller.update) // Partially update article
+  .delete(controller.remove); // Delete article and its images
 
-// روت قدیمی حذف مقاله جهت حفظ سازگاری
+// Legacy delete endpoint for backward compatibility
 router.delete("/:id/remove", controller.remove);
 
 module.exports = router;

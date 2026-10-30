@@ -7,24 +7,24 @@ const { swaggerUi, swaggerDocument } = require("./docs/swagger.js");
 
 const app = express();
 
-// میان‌افزارهای پردازش بدنه درخواست (Body Parser)
+// Body parser middlewares
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-// میان‌افزار تنظیم هدرهای CORS
+// CORS configuration headers
 app.use(setHeaders);
 
-// سرو فایل‌های استاتیک آپلود شده
+// Serve static uploaded files
 app.use(
   "/uploads",
   express.static(path.resolve(__dirname, "../public/uploads/articles"))
 );
 
-// مستندات Swagger API (قابل دسترسی در /api-docs و /docs)
+// Swagger API documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.get("/docs", (req, res) => res.redirect("/api-docs"));
 
-// روت بررسی سلامت سرور (Health Check)
+// Health check endpoint
 app.get("/health", (req, res) => {
   return res.status(200).json({
     status: 200,
@@ -36,7 +36,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// روت خوش‌آمدگویی نسخه ۱ API
+// Root API welcome endpoint
 app.get("/api/v1", (req, res) => {
   return res.status(200).json({
     status: 200,
@@ -46,10 +46,10 @@ app.get("/api/v1", (req, res) => {
   });
 });
 
-// روت‌های اصلی مقالات
+// Main article routes
 app.use("/api/v1/articles", articlesRouter);
 
-// مدیریت خطای مسیرهای ناموجود (404 Not Found)
+// 404 Not Found handler
 app.use((req, res) => {
   return res.status(404).json({
     status: 404,
@@ -60,7 +60,7 @@ app.use((req, res) => {
   });
 });
 
-// میان‌افزار متمرکز مدیریت خطاها (Centralized Error Handler)
+// Centralized error handler
 app.use(errorHandler);
 
 module.exports = app;
